@@ -46,7 +46,7 @@ class TicketingView(View):
 
         data = request.POST
         passenger_name = data.get('passenger_name')
-        passenger_age = data.get('passenger_age')
+        passenger_age = int(data.get('passenger_age', 0))
         infants = data.get('infants', [])
         gender = data.get('gender') # will only accept M, F, O
         
@@ -55,12 +55,8 @@ class TicketingView(View):
         infant_passengers = []
         for infant in infants:
             # check Age of infant
-            if infant.get('passenger_age') > 5:
-                return JsonResponse({'error': 'Infant age should be less than 5'}, status=400)
-            
-            infant_passengers.append(Passenger(Name=infant.get('passenger_name'), Age=infant.get('passenger_age'), Guardian=main_passenger))
-
-        
+            if int(infant.get('passenger_age', 0)) > 5:
+                return JsonResponse({'error': 'Infant age should be less than 5'}, status=400)        
         
         priority_booking = False
         berth = None
@@ -69,20 +65,19 @@ class TicketingView(View):
         if (gender == 'Female' and len(infants) > 0) or (passenger_age > 60):
             # priority booking
             # I am making assumption that side lower berth and lower berth is diiferent
-            try:
-                berth = Berth.objects.filter(Active=True, Booked=False, Type ='LB').order_by("BerthNumber").select_for_update().first()
+            berth = Berth.objects.filter(Active=True, Booked=False, Type ='LB').order_by("BerthNumber").select_for_update().first()
+            
+            if berth:
                 priority_booking = True
                 ticket_availability = 'CNF'
-
-            except Berth.DoesNotExist:
+            else:
                 priority_booking = False
         
         if not priority_booking:
-            try:
+            # try:
                 # dont select SL berth here
-                berth = Berth.objects.exclue(Type='SL').filter(Active=True, Booked=False,).order_by("BerthNumber").select_for_update().first()
-                ticket_availability = 'CNF'
-            except Berth.DoesNotExist:
+            berth = Berth.objects.exclude(Type='SL').filter(Active=True, Booked=False,).order_by("BerthNumber").select_for_update().first()
+            if not berth:
                 wl_tickets_count = Ticket.objects.filter(Type='WL', Active=True).count()
                 rac_tickets_count = Ticket.objects.filter(Type='RAC', Active=True).count()
                 
@@ -92,6 +87,9 @@ class TicketingView(View):
                     ticket_availability = 'WL'
                 elif wl_tickets_count < 10 and rac_tickets_count < 18:
                     ticket_availability = 'RAC'
+            else:
+                ticket_availability = 'CNF'
+
         
         if ticket_availability == 'not_available':
             return JsonResponse({'error': 'No ticket available'}, status=400)
@@ -101,9 +99,9 @@ class TicketingView(View):
         elif ticket_availability == 'RAC':
             ticket_type = 'RAC'
             # find a berth and create ticket
-            try:
-                berth = Berth.objects.filter(Active=True, Booked=False,Type='SL').order_by("BerthNumber").select_for_update().first()
-            except Berth.DoesNotExist:
+            berth = Berth.objects.filter(Active=True, Booked=False,Type='SL').order_by("BerthNumber").select_for_update().first()
+            
+            if not berth:
                 return JsonResponse({'error': 'No ticket available'}, status=400)
             
             # just double check there are not more than one RAC ticket for the same berth
@@ -116,6 +114,10 @@ class TicketingView(View):
         
         # create main passenger ticket
         main_passenger.save()
+        
+        infant_passengers = []
+        for infant in infants:            
+            infant_passengers.append(Passenger(Name=infant.get('passenger_name'), Age=infant.get('passenger_age'), Guardian=main_passenger))
         
         Passenger.objects.bulk_create(infant_passengers)
         
@@ -162,7 +164,7 @@ class TicketingView(View):
             # check if there is any waiting list
             wl_ticket = Ticket.objects.filter(Type='WL', Active=True).order_by("BookingTime").first()
             
-            berth = Berth.objects.filter(id = ticket.BerthID__id).select_for_update().first()
+            berth = Berth.objects.filter(id = ticket.BerthID.id).select_for_update().first()
             
             if wl_ticket: 
                 wl_ticket.Type = 'RAC'
@@ -176,11 +178,10 @@ class TicketingView(View):
                 
             return JsonResponse({'message': 'Ticket cancelled'})
         elif ticket.Type == 'CNF':
-            berth = Berth.objects.filter(id = ticket.BerthID__id).select_for_update().first()
 
             rac_ticket = Ticket.objects.filter(Type='RAC', Active=True).order_by("BookingTime").first()
             
-            berth = Berth.objects.filter(id = ticket.BerthID__id).select_for_update().first()
+            berth = Berth.objects.filter(id = ticket.BerthID.id).select_for_update().first()
             
             if rac_ticket: 
                 rac_ticket.Type = 'CNF'
@@ -193,9 +194,6 @@ class TicketingView(View):
                 berth.Booked = False
                 berth.save()
             
-            
-            berth.Booked = False
-            berth.save()
             return JsonResponse({'message': 'Ticket cancelled'})
         else:
             # check if there is any waiting list
