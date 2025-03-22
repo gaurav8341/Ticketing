@@ -16,9 +16,9 @@ class Command(BaseCommand):
                 
         # Deactivate all tickets related to inactive berths
         Ticket.objects.filter(BerthID__Active=False).update(Active=False)
-
+        
         # Deactivate all passengers linked to inactive tickets
-        Passenger.objects.filter(Ticket__Active=False).update(Active=False)
+        Passenger.objects.filter(Active=True).update(Active=False)
 
         
         self.stdout.write(self.style.SUCCESS('Successfully deactivated all berths'))
