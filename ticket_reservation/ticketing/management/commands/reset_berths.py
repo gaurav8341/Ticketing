@@ -1,6 +1,6 @@
 # filepath: /home/vast/repos/Ticketing/ticket_reservation/ticketing/management/commands/create_berths.py
 from django.core.management.base import BaseCommand
-from ticketing.models import Berth
+from ticketing.models import Berth, Ticket, Passenger
 
 class Command(BaseCommand):
     help = 'Create initial berths in the Berth table and Deactivate older berths of any. This will also deactivate the tickets and passengers associated with the berths'
@@ -12,17 +12,24 @@ class Command(BaseCommand):
         berths = []
         
         Berth.objects.all().update(Active=False)
-        Berth.objects.filter(Active=False).update(tickets__Active=False, tickets__passenger__active=False)
+        
+                
+        # Deactivate all tickets related to inactive berths
+        Ticket.objects.filter(BerthID__Active=False).update(Active=False)
+
+        # Deactivate all passengers linked to inactive tickets
+        Passenger.objects.filter(Ticket__Active=False).update(Active=False)
+
         
         self.stdout.write(self.style.SUCCESS('Successfully deactivated all berths'))
         
         for compartment in range(9):  # 9 compartments
             for berth_type in berth_structure:
                 b = Berth(
-                    berth_type=berth_type,
-                    berth_number=berth_number,
+                    Type=berth_type,
+                    BerthNumber=berth_number,
                     Active=True,
-                    booked=False
+                    Booked=False
                 )
                 berths.append(b)
                 berth_number += 1
