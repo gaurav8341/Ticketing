@@ -70,7 +70,7 @@ class Passenger(models.Model):
     # Ticket = models.ForeignKey('Ticket', on_delete=models.CASCADE, related_name='passengers')
     Gender = models.CharField(max_length=1, choices=[('M', 'Male'), ('F','Female'), ('O', 'Other')], blank=True, null=True)
     Active = models.BooleanField(default=True)
-    Details = models.JSONField()
+    Details = models.JSONField(null=True, blank=True)
     
     CreatedDate = models.DateTimeField(auto_now_add=True)
     ModifiedDate = models.DateTimeField(auto_now=True)
@@ -103,7 +103,7 @@ class Ticket(models.Model):
     BerthNumber = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(63)], blank=True, null=True) # This is for easy access
     # train = models.ForeignKey(Train, on_delete=models.CASCADE)
     BookingTime = models.DateTimeField(auto_now_add=True)
-    Details = models.JSONField()
+    Details = models.JSONField(null=True, blank=True)
     
     CreatedDate = models.DateTimeField(auto_now_add=True)
     ModifiedDate = models.DateTimeField(auto_now=True)

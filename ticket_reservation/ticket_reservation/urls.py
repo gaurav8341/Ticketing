@@ -16,9 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 from ticketing.views import TicketingView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('tickets/<str:action>/', TicketingView.as_view(), name='ticketing'),
+    path('tickets/<str:action>/', csrf_exempt(TicketingView.as_view()), name='ticketing'),    
 ]

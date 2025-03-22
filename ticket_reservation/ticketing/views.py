@@ -2,6 +2,9 @@ from django.shortcuts import render
 
 from django.views import View
 from django.http import JsonResponse
+from django.db import transaction
+
+import json
 
 from .models import Berth, Passenger, Ticket
 
@@ -26,6 +29,7 @@ class TicketingView(View):
         else:
             return JsonResponse({'error': 'Invalid action'}, status=400)
     
+    @transaction.atomic
     def book_ticket(self, request):
                 
         # book a ticket. 
@@ -44,14 +48,15 @@ class TicketingView(View):
         6. Send the ticket details to user
         """
 
-        data = request.POST
+        # data = request.POST
+        data = json.loads(request.body)
+        print(data)
         passenger_name = data.get('passenger_name')
         passenger_age = int(data.get('passenger_age', 0))
         infants = data.get('infants', [])
         gender = data.get('gender') # will only accept M, F, O
         
-        main_passenger = Passenger(Name=passenger_name, Age=passenger_age, Gender = gender)
-        
+        main_passenger = Passenger(Name=passenger_name, Age=passenger_age, Gender=gender)
         infant_passengers = []
         for infant in infants:
             # check Age of infant
@@ -62,7 +67,7 @@ class TicketingView(View):
         berth = None
         ticket_availability = ''
         rac_berth_count = 0
-        if (gender == 'Female' and len(infants) > 0) or (passenger_age > 60):
+        if (gender == 'F' and len(infants) > 0) or (passenger_age > 60):
             # priority booking
             # I am making assumption that side lower berth and lower berth is diiferent
             berth = Berth.objects.filter(Active=True, Booked=False, Type ='LB').order_by("BerthNumber").select_for_update().first()
@@ -93,11 +98,8 @@ class TicketingView(View):
         
         if ticket_availability == 'not_available':
             return JsonResponse({'error': 'No ticket available'}, status=400)
-        elif ticket_availability == 'WL':
-            ticket_type = 'WL'
             # create ticket without berth
         elif ticket_availability == 'RAC':
-            ticket_type = 'RAC'
             # find a berth and create ticket
             berth = Berth.objects.filter(Active=True, Booked=False,Type='SL').order_by("BerthNumber").select_for_update().first()
             
@@ -121,11 +123,11 @@ class TicketingView(View):
         
         Passenger.objects.bulk_create(infant_passengers)
         
-        ticket = Ticket(Type=ticket_type, PassengerID=main_passenger)
+        ticket = Ticket(Type=ticket_availability, PassengerID=main_passenger)
         
         if berth:
             ticket.BerthID = berth
-            if (ticket_type == 'RAC' and rac_berth_count == 2) or ticket_type == 'CNF':
+            if (ticket_availability == 'RAC' and rac_berth_count == 2) or ticket_availability == 'CNF':
                 berth.Booked = True
                 berth.save()
         
@@ -140,6 +142,7 @@ class TicketingView(View):
         
         return JsonResponse(ticket_details)
     
+    @transaction.atomic
     def cancel_ticket(self, request):
         # Cancel a ticket.
 
@@ -154,8 +157,12 @@ class TicketingView(View):
         8. if there is no waiting list then make the berth available
         """
         
-        data = request.POST
-        ticket_id = data.get('ticket_id')
+        data = json.loads(request.body)
+        ticket_id = int(data.get('ticket_id', None))
+        
+        if not ticket_id:
+            return JsonResponse({'error': 'Ticket ID is required'}, status=400)
+        
         ticket = Ticket.objects.get(id=ticket_id)
         ticket.Active = False
         ticket.save()
@@ -208,7 +215,7 @@ class TicketingView(View):
         4. Show the berth details
         """
         
-        tickets = Ticket.objects.all()
+        tickets = Ticket.objects.filter(Active=True)
         ticket_list = []        
         
         for ticket in tickets:
@@ -239,7 +246,6 @@ class TicketingView(View):
         1. Show all the available berths
         2. Show the details of the berth
         """
-        
         berths = Berth.objects.filter(Active=True, Booked=False)
         berth_list = []
         
