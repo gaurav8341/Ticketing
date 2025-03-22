@@ -98,12 +98,20 @@ class Ticket(models.Model):
     Active = models.BooleanField(default=True)
     PassengerID = models.ForeignKey(Passenger, on_delete=models.CASCADE, related_name="tickets")
     BerthID = models.ForeignKey(Berth, on_delete=models.CASCADE, related_name='tickets')
+    BerthType = models.CharField(max_length=2, choices=Berth.BERTH_TYPES, blank=True, null=True) # This is for easy access
+    BerthNumber = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(63)], blank=True, null=True) # This is for easy access
     # train = models.ForeignKey(Train, on_delete=models.CASCADE)
     BookingTime = models.DateTimeField(auto_now_add=True)
     Details = models.JSONField()
     
     CreatedDate = models.DateTimeField(auto_now_add=True)
     ModifiedDate = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if self.BerthID:
+            self.BerthType = self.BerthID.Type
+            self.BerthNumber = self.BerthID.BerthNumber
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.get_Type_display()} - {self.PassengerID.Name}"
