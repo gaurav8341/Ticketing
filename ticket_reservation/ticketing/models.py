@@ -36,20 +36,24 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 class Berth(models.Model):
     BERTH_TYPES = [
         ('SL', 'Side Lower'),
-        ('OTHER', 'Other'),# WE DONT HAVE TIME TO DECIDE NUMBER OF BERTHS FOR EACH TYPE
+        # ('OTHER', 'Other'),# WE DONT HAVE TIME TO DECIDE NUMBER OF BERTHS FOR EACH TYPE
         # ('SU', 'Side Upper'),
-        # ('LB', 'Lower Berth'),
-        # ('MB', 'Middle Berth'),
-        # ('UB', 'Upper Berth'),
+        ('LB', 'Lower Berth'),
+        ('MB', 'Middle Berth'),
+        ('UB', 'Upper Berth'),
     ]
-    berth_type = models.CharField(max_length=2, choices=BERTH_TYPES)
-    berth_number = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(63)])
+    Type = models.CharField(max_length=2, choices=BERTH_TYPES)
+    BerthNumber = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(63)])
     # train = models.ForeignKey(Train, on_delete=models.CASCADE)
     # coach_number = models.IntegerField()])
-    booked = models.BooleanField(default=False)
+    Booked = models.BooleanField(default=False)
+    Active = models.BooleanField(default=True)
+    
+    CreatedDate = models.DateTimeField(auto_now_add=True)
+    ModifiedDate = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.get_berth_type_display()} - {self.berth_number}"
+        return f"{self.get_Type_display()} - {self.BerthNumber}"
 
 
 # 3. Passenger -- This is not user
@@ -60,14 +64,18 @@ class Berth(models.Model):
 #    TicketID
 
 class Passenger(models.Model):
-    name = models.CharField(max_length=100)
-    age = models.IntegerField()
-    guardian = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
-    ticket = models.ForeignKey('Ticket', on_delete=models.CASCADE)
-    details = models.JSONField()
+    Name = models.CharField(max_length=100)
+    Age = models.IntegerField()
+    Guardian = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    Ticket = models.ForeignKey('Ticket', on_delete=models.CASCADE, related_name='passengers')
+    Active = models.BooleanField(default=True)
+    Details = models.JSONField()
+    
+    CreatedDate = models.DateTimeField(auto_now_add=True)
+    ModifiedDate = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return self.name
+        return self.Name
 
 # 1. tickets
 #    id
@@ -86,13 +94,18 @@ class Ticket(models.Model):
         ('CNF', 'Confirmed'),
         ('WL', 'Waiting List'),
     ]
-    ticket_type = models.CharField(max_length=3, choices=TICKET_TYPES)
-    active = models.BooleanField(default=True)
-    passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE)
-    berth = models.ForeignKey(Berth, on_delete=models.CASCADE)
+    Type = models.CharField(max_length=3, choices=TICKET_TYPES)
+    Active = models.BooleanField(default=True)
+    PassengerID = models.ForeignKey(Passenger, on_delete=models.CASCADE, related_name="tickets")
+    BerthID = models.ForeignKey(Berth, on_delete=models.CASCADE, related_name='tickets')
     # train = models.ForeignKey(Train, on_delete=models.CASCADE)
-    booking_time = models.DateTimeField(auto_now_add=True)
-    details = models.JSONField()
+    BookingTime = models.DateTimeField(auto_now_add=True)
+    Details = models.JSONField()
+    
+    CreatedDate = models.DateTimeField(auto_now_add=True)
+    ModifiedDate = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.get_ticket_type_display()} - {self.passenger.name}"
+        return f"{self.get_Type_display()} - {self.PassengerID.Name}"
+
+
