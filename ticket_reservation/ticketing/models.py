@@ -67,7 +67,8 @@ class Passenger(models.Model):
     Name = models.CharField(max_length=100)
     Age = models.IntegerField()
     Guardian = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
-    Ticket = models.ForeignKey('Ticket', on_delete=models.CASCADE, related_name='passengers')
+    # Ticket = models.ForeignKey('Ticket', on_delete=models.CASCADE, related_name='passengers')
+    Gender = models.CharField(max_length=1, choices=[('M', 'Male'), ('F','Female'), ('O', 'Other')], blank=True, null=True)
     Active = models.BooleanField(default=True)
     Details = models.JSONField()
     
@@ -97,7 +98,7 @@ class Ticket(models.Model):
     Type = models.CharField(max_length=3, choices=TICKET_TYPES)
     Active = models.BooleanField(default=True)
     PassengerID = models.ForeignKey(Passenger, on_delete=models.CASCADE, related_name="tickets")
-    BerthID = models.ForeignKey(Berth, on_delete=models.CASCADE, related_name='tickets')
+    BerthID = models.ForeignKey(Berth, on_delete=models.CASCADE, related_name='tickets', blank=True, null=True)
     BerthType = models.CharField(max_length=2, choices=Berth.BERTH_TYPES, blank=True, null=True) # This is for easy access
     BerthNumber = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(63)], blank=True, null=True) # This is for easy access
     # train = models.ForeignKey(Train, on_delete=models.CASCADE)

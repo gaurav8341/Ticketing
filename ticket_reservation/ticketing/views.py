@@ -29,6 +29,9 @@ class TicketingView(View):
     def book_ticket(self, request):
                 
         # book a ticket. 
+        # this thing does not handle multiple passengers at the same time.
+        # It will handle infants and passengers though.
+        # You can book one ticket at a time through this call 
 
         """ 
         1. Get passenger details from user
@@ -44,15 +47,96 @@ class TicketingView(View):
         data = request.POST
         passenger_name = data.get('passenger_name')
         passenger_age = data.get('passenger_age')
-        berth_type = data.get('berth_type')
-        berth_number = data.get('berth_number')
-        ticket_type = data.get('ticket_type')
+        infants = data.get('infants', [])
+        gender = data.get('gender') # will only accept M, F, O
         
-        passenger = Passenger.objects.create(Name=passenger_name, Age=passenger_age)
-        berth = Berth.objects.get(BerthType=berth_type, BerthNumber=berth_number)
-        ticket = Ticket.objects.create(Type=ticket_type, PassengerID=passenger, BerthID=berth)
+        main_passenger = Passenger(Name=passenger_name, Age=passenger_age, Gender = gender)
         
-        return JsonResponse({'ticket_id': ticket.id})
+        infant_passengers = []
+        for infant in infants:
+            # check Age of infant
+            if infant.get('passenger_age') > 5:
+                return JsonResponse({'error': 'Infant age should be less than 5'}, status=400)
+            
+            infant_passengers.append(Passenger(Name=infant.get('passenger_name'), Age=infant.get('passenger_age'), Guardian=main_passenger))
+
+        
+        
+        priority_booking = False
+        berth = None
+        ticket_availability = ''
+        rac_berth_count = 0
+        if (gender == 'Female' and len(infants) > 0) or (passenger_age > 60):
+            # priority booking
+            # I am making assumption that side lower berth and lower berth is diiferent
+            try:
+                berth = Berth.objects.filter(Active=True, Booked=False, Type ='LB').order_by("BerthNumber").select_for_update().first()
+                priority_booking = True
+                ticket_availability = 'CNF'
+
+            except Berth.DoesNotExist:
+                priority_booking = False
+        
+        if not priority_booking:
+            try:
+                # dont select SL berth here
+                berth = Berth.objects.exclue(Type='SL').filter(Active=True, Booked=False,).order_by("BerthNumber").select_for_update().first()
+                ticket_availability = 'CNF'
+            except Berth.DoesNotExist:
+                wl_tickets_count = Ticket.objects.filter(Type='WL', Active=True).count()
+                rac_tickets_count = Ticket.objects.filter(Type='RAC', Active=True).count()
+                
+                if wl_tickets_count >= 10 and rac_tickets_count >= 18:
+                    ticket_availability = 'not_available'
+                elif wl_tickets_count < 10 and rac_tickets_count >= 18:
+                    ticket_availability = 'WL'
+                elif wl_tickets_count < 10 and rac_tickets_count < 18:
+                    ticket_availability = 'RAC'
+        
+        if ticket_availability == 'not_available':
+            return JsonResponse({'error': 'No ticket available'}, status=400)
+        elif ticket_availability == 'WL':
+            ticket_type = 'WL'
+            # create ticket without berth
+        elif ticket_availability == 'RAC':
+            ticket_type = 'RAC'
+            # find a berth and create ticket
+            try:
+                berth = Berth.objects.filter(Active=True, Booked=False,Type='SL').order_by("BerthNumber").select_for_update().first()
+            except Berth.DoesNotExist:
+                return JsonResponse({'error': 'No ticket available'}, status=400)
+            
+            # just double check there are not more than one RAC ticket for the same berth
+            rac_tickets = Ticket.objects.filter(Type='RAC', Active=True, BerthID=berth).count()
+            if rac_tickets > 1:
+                return JsonResponse({'error': 'No ticket available'}, status=400)
+            rac_berth_count = rac_tickets + 1
+        
+        # we have berth now
+        
+        # create main passenger ticket
+        main_passenger.save()
+        
+        Passenger.objects.bulk_create(infant_passengers)
+        
+        ticket = Ticket(Type=ticket_type, PassengerID=main_passenger)
+        
+        if berth:
+            ticket.BerthID = berth
+            if (ticket_type == 'RAC' and rac_berth_count == 2) or ticket_type == 'CNF':
+                berth.Booked = True
+                berth.save()
+        
+        ticket.save()  
+        
+        ticket_details = {
+            'ticket_id': ticket.id,
+            'ticket_type': ticket.Type,
+            'berth_number': ticket.BerthNumber if ticket.BerthNumber else 'NA',
+            'berth_type': ticket.BerthType if ticket.BerthType else 'NA'
+        }      
+        
+        return JsonResponse(ticket_details)
     
     def cancel_ticket(self, request):
         # Cancel a ticket.
@@ -71,8 +155,51 @@ class TicketingView(View):
         data = request.POST
         ticket_id = data.get('ticket_id')
         ticket = Ticket.objects.get(id=ticket_id)
-        ticket.delete()
-        return JsonResponse({'message': 'Ticket cancelled'})    
+        ticket.Active = False
+        ticket.save()
+        
+        if ticket.Type == 'RAC':
+            # check if there is any waiting list
+            wl_ticket = Ticket.objects.filter(Type='WL', Active=True).order_by("BookingTime").first()
+            
+            berth = Berth.objects.filter(id = ticket.BerthID__id).select_for_update().first()
+            
+            if wl_ticket: 
+                wl_ticket.Type = 'RAC'
+                wl_ticket.BerthID = berth
+                # wl_ticket.Active = False
+                wl_ticket.save()
+                # send the update to the passenger that his ticket is confirmed
+            else:
+                berth.Booked = False
+                berth.save()
+                
+            return JsonResponse({'message': 'Ticket cancelled'})
+        elif ticket.Type == 'CNF':
+            berth = Berth.objects.filter(id = ticket.BerthID__id).select_for_update().first()
+
+            rac_ticket = Ticket.objects.filter(Type='RAC', Active=True).order_by("BookingTime").first()
+            
+            berth = Berth.objects.filter(id = ticket.BerthID__id).select_for_update().first()
+            
+            if rac_ticket: 
+                rac_ticket.Type = 'CNF'
+                rac_ticket.BerthID = berth
+                # rac_ticket.BerthType = wl_ticket.BerthType
+                # wl_ticket.Active = False
+                rac_ticket.save()
+                # send the update to the passenger that his ticket is confirmed
+            else:
+                berth.Booked = False
+                berth.save()
+            
+            
+            berth.Booked = False
+            berth.save()
+            return JsonResponse({'message': 'Ticket cancelled'})
+        else:
+            # check if there is any waiting list
+            return JsonResponse({'message': 'Ticket cancelled'})    
     
     def booked_tickets(self, request):
         # Booked Tickets
@@ -87,12 +214,21 @@ class TicketingView(View):
         ticket_list = []        
         
         for ticket in tickets:
+            infants = Passenger.objects.filter(Guardian=ticket.PassengerID)
+            infant_list = []
+            for infant in infants:
+                infant_list.append({
+                    'passenger_name': infant.Name,
+                    'passenger_age': infant.Age
+                })
             ticket_list.append({
                 'ticket_id': ticket.id,
                 'passenger_name': ticket.PassengerID.Name,
                 'passenger_age': ticket.PassengerID.Age,
+                'passenger_gender': ticket.PassengerID.Gender,
                 'berth_type': ticket.BerthType,
-                'berth_number': ticket.BerthID.BerthNumber,
+                'infants': infant_list,
+                'berth_number': ticket.BerthNumber,
                 'ticket_type': ticket.Type
             })
         

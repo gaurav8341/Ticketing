@@ -16,7 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from ticketing.views import TicketingView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('tickets/<str:action>/', TicketingView.as_view(), name='ticketing'),
 ]
