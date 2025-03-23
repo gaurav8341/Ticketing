@@ -24,12 +24,21 @@ This is a Django-based ticket reservation system. The project allows users to bo
 ```
 
 2. **Build and run the Docker containers:**
+
+We are using same 5432 port for db contaner. 
+
+**Please make sure that youre postgres service is down**
+
 ``` sh
 
    docker-compose up --build -d
 
 #    docker compose exec web python manage.py migrate
+```
 
+In case you want to reset your application data run this command.
+
+```sh
    docker-compose exec web python manage.py reset_berths
 ```
 
