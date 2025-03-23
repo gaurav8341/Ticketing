@@ -92,7 +92,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', 'ticketing'),  # Replace with your database name
         'USER': os.getenv('POSTGRES_USER', 'vast'),     # Replace with your database user
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'vast'),  # Replace with your database password
-        'HOST': os.getenv('POSTGRES_HOST', 'db'),       # Set to your database host
+        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),       # Set to your database host
         'PORT': os.getenv('POSTGRES_PORT', '5432'),     # Default PostgreSQL port
     }
 }

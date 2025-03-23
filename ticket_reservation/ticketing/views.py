@@ -50,7 +50,6 @@ class TicketingView(View):
 
         # data = request.POST
         data = json.loads(request.body)
-        print(data)
         passenger_name = data.get('passenger_name')
         passenger_age = int(data.get('passenger_age', 0))
         infants = data.get('infants', [])
@@ -81,7 +80,11 @@ class TicketingView(View):
         if not priority_booking:
             # try:
                 # dont select SL berth here
-            berth = Berth.objects.exclude(Type='SL').filter(Active=True, Booked=False,).order_by("BerthNumber").select_for_update().first()
+            berth = Berth.objects.exclude(Type__in = ['SL', 'LB']).filter(Active=True, Booked=False,).order_by("BerthNumber").select_for_update().first()
+            if not berth:
+                # check for lb
+                berth = Berth.objects.filter(Active=True, Booked=False, Type='LB').order_by("BerthNumber").select_for_update().first()
+                
             if not berth:
                 wl_tickets_count = Ticket.objects.filter(Type='WL', Active=True).count()
                 rac_tickets_count = Ticket.objects.filter(Type='RAC', Active=True).count()

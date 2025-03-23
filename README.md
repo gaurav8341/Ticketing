@@ -18,10 +18,10 @@ This is a Django-based ticket reservation system. The project allows users to bo
 
 1. **Clone the repository:**
 
-```sh
-   git clone https://github.com/yourusername/ticketing.git
-   cd ticketing
-```
+>```sh
+>   git clone https://github.com/yourusername/ticketing.git
+>   cd ticketing
+>```
 
 2. **Build and run the Docker containers:**
 
@@ -29,25 +29,25 @@ We are using same 5432 port for db contaner.
 
 **Please make sure that youre postgres service is down**
 
-``` sh
-
-   docker-compose up --build -d
-
-#    docker compose exec web python manage.py migrate
-```
+>``` sh
+>
+>   docker-compose up --build -d
+>
+>#    docker compose exec web python manage.py migrate
+>```
 
 In case you want to reset your application data run this command.
 
-```sh
-   docker-compose exec web python manage.py reset_berths
-```
+>```sh
+>   docker-compose exec web python manage.py reset_berths
+>```
 
 You can also get the image from docker hub with command
     
 
-```sh 
-    docker pull gaurav8341/ticket
-```
+>```sh 
+>    docker pull gaurav8341/ticket
+>```
 
 Dont forget to run the `migrate` and `reset_berths` command
 
@@ -57,9 +57,9 @@ Dont forget to run the `migrate` and `reset_berths` command
 
 4. **To Stop the application:**:
 
-```sh
-    docker compose down
-```
+>```sh
+>    docker compose down
+>```
 
 
 ## API Documentation
