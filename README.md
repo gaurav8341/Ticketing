@@ -216,6 +216,8 @@ On cancellation the next booked RAC, WL ticket will be taken for consideration.
 
 1. Django testcases to be written
 
+2. Postman testcases
+
 #### Booking Logic Revamp
 
 Currently only one ticket details can be booked at a time. Real product will not behave in such a way.
@@ -229,6 +231,28 @@ Currently only one ticket details can be booked at a time. Real product will not
 
     - This will make things easier, will also make the priority cpde redundant but Maybe give user the freedom to select his own seats
 
+#### Allow Trains to be added
+
+1. Trains to be added by staff user. with their schdule and number coaches with their type.
+
+2. Each Berth Will have sertain Coaches with differeing type
+
+3. Each Coach will have certain number of berths.
+
+4. Coach, Train These models will be added newly.
+
+5. Because of the new things the lock mechanosm will change. It will be based on time. While booking, first check if that berth has any seat allocated for the journey time.
+
+#### Emails and updates.
+Send emails to the user in case of confirmation or update in ticket details.
+
+#### Models
+
+1. Train
+2. Coaches
+3. TrainJourneyLog -- will have all the relavant details like how many passengers of which type and all metadata.
+4. PaymentLogs --
+5. CustomUser -- With option for staff user and passenger user, etc
 
 ## License
 
