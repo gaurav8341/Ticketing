@@ -163,7 +163,10 @@ class TicketingView(View):
         if not ticket_id:
             return JsonResponse({'error': 'Ticket ID is required'}, status=400)
         
-        ticket = Ticket.objects.get(id=ticket_id)
+        try:
+            ticket = Ticket.objects.get(id=ticket_id)
+        except Ticket.DoesNotExist:
+            return JsonResponse({'error': 'No Such Ticket Available'}, status=400)
         ticket.Active = False
         ticket.save()
         

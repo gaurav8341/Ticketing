@@ -4,9 +4,10 @@ services:
   web:
     build: .
     # container-name: ticket
-    image: ticket:latest
+    image: gaurav8341/ticket:latest
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
+      - ./ticket_reservation/db:/app/ticket_reservation/db
     ports:
       - "8000:8000"
