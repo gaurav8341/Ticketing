@@ -32,12 +32,12 @@ def reset_berths(apps, schema_editor):
 
     Berth.objects.bulk_create(berths) 
     
-    Print('Successfully created 63 berths')
+    print('Successfully created 63 berths')
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ticketing', '0003_previous_migration'),
+        ('ticketing', '0003_alter_passenger_details_alter_ticket_details'),
     ]
 
     operations = [
