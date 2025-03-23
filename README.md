@@ -198,7 +198,23 @@ On cancellation the next booked RAC, WL ticket will be taken for consideration.
 >}
 >```
 
+## TODO:
 
+#### Django templates and forms
+
+1. Add Django templates and forms for better UI experience
+
+2. Should be debated to go with django templates or React
+
+#### Authentication and Authorizaton.
+
+1. User authentication will require adding new login, logout and signup apis
+
+2. For Authorization part the user will only be able to see the ticket details of the ticktes he has ownership of or he is staff member.
+
+#### Testacases
+
+1. Django testcases to be written
 
 ## License
 
