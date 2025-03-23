@@ -216,6 +216,20 @@ On cancellation the next booked RAC, WL ticket will be taken for consideration.
 
 1. Django testcases to be written
 
+#### Booking Logic Revamp
+
+Currently only one ticket details can be booked at a time. Real product will not behave in such a way.
+
+1. Make sure to allow multiple passengers to allow booking of tickets.
+
+2. Allow at least 5 passengers to book the ticket at a time. This will change many things.
+    - the request payload will change.
+    - Currently we are telling which seat to be allocated.
+    - But Nonetheless select nearbuy seats if multiple passengers are being booked. 
+
+    - This will make things easier, will also make the priority cpde redundant but Maybe give user the freedom to select his own seats
+
+
 ## License
 
 This project is licensed under the MIT License.
