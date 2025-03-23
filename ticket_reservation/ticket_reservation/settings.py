@@ -76,12 +76,8 @@ WSGI_APPLICATION = 'ticket_reservation.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ticketing',  # Replace with your database name
-        'USER': 'vast',  # Replace with your database user
-        'PASSWORD': 'vast',  # Replace with your database password
-        'HOST': 'localhost',  # Set to your database host
-        'PORT': '5432',  # Default PostgreSQL port
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
