@@ -78,10 +78,22 @@ WSGI_APPLICATION = 'ticket_reservation.wsgi.application'
 db_path = os.path.join(BASE_DIR, "db")
 os.makedirs(db_path, exist_ok=True)
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(db_path, "ticket.sqlite3"),
+#     }
+# }
+# filepath: /home/vast/repos/Ticketing/ticket_reservation/ticket_reservation/settings.py
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(db_path, "ticket.sqlite3"),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'ticketing'),  # Replace with your database name
+        'USER': os.getenv('POSTGRES_USER', 'vast'),     # Replace with your database user
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'vast'),  # Replace with your database password
+        'HOST': os.getenv('POSTGRES_HOST', 'db'),       # Set to your database host
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),     # Default PostgreSQL port
     }
 }
 

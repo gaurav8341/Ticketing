@@ -26,9 +26,9 @@ This is a Django-based ticket reservation system. The project allows users to bo
 2. **Build and run the Docker containers:**
 ``` sh
 
-   docker-compose up --build
+   docker-compose up --build -d
 
-   docker compose exec web python manage.py migrate
+#    docker compose exec web python manage.py migrate
 
    docker-compose exec web python manage.py reset_berths
 ```
@@ -45,6 +45,12 @@ Dont forget to run the `migrate` and `reset_berths` command
 3. **Access the application:**
 
     Access the application on link `http:localhost:8000`
+
+4. **To Stop the application:**:
+
+```sh
+    docker compose down
+```
 
 
 ## API Documentation

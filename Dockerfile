@@ -29,11 +29,11 @@ RUN pip install -r requirements.txt
 # COPY .ticket_reservation /app/
 
 WORKDIR "/app/ticket_reservation/"
-RUN python manage.py migrate
+# RUN python manage.py migrate
 
-RUN python manage.py reset_berths
+# RUN python manage.py reset_berths
 
 # RUN python manage.py reset_berths
 
 # Run the Django development server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
